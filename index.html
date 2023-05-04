@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+
+
+    <link rel="stylesheet" href="https://raw.githubusercontent.com/NagashekarVanapalli/DV_project/main/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://raw.githubusercontent.com/NagashekarVanapalli/DV_project/main/css/jquery-ui.theme.min.css">
+    <link rel="stylesheet" href="https://raw.githubusercontent.com/NagashekarVanapalli/DV_project/main/css/jquery-ui.structure.min.css">
+    <style>
+        #chart-area svg {
+            margin: auto;
+            display: inherit;
+        }
+
+        text {
+            font: 10px sans-serif;
+        }
+
+        form {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
+        .d3-tip {
+            line-height: 1;
+            font-weight: bold;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border-radius: 2px;
+        }
+        .d3-tip:after {
+            box-sizing: border-box;
+            display: inline;
+            font-size: 10px;
+            width: 100%;
+            line-height: 1;
+            color: rgba(0, 0, 0, 0.8);
+            content: "\25BC";
+            position: absolute;
+            text-align: center;
+        }
+
+        .d3-tip.n:after {
+            margin: -1px 0 0 0;
+            top: 100%;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Sleep patterns by Gender</h2>
+    <br>
+    <p>Sleep patterns refer to the variations in the timing, duration, and quality of sleep that an individual experiences over a period of time. Sleep patterns can be influenced by a variety of factors such as age, lifestyle, work schedules, and medical conditions. There are different stages of sleep, including light sleep, deep sleep, and rapid eye movement (REM) sleep, and the amount of time spent in each stage can vary depending on the individual and other factors. Studying sleep patterns can help identify sleep disorders and develop strategies to improve sleep quality and overall health.</p>
+    <br>
+    <div id="chart-area" style="margin-left: 24px; align-items: center; overflow: hidden; border: 2px solid black; background: ivory ">
+        
+        <form style="margin-left: 0px; align-items: center; padding-right: 300px; padding-top: 200px">
+            <label style="margin-left: 24px; align-items: center;"  name="dataset"><input type="radio"  value="male" checked> male</label>
+            <label style="margin-left: 24px; align-items: first baseline;"><input type="radio"  name="dataset" value="female"> female</label>
+        </form>
+    </div>
+
+    
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.9.1/d3-tip.min.js"></script>
+    <script src="https://raw.githubusercontent.com/NagashekarVanapalli/DV_project/main/js/jquery.min.js"></script>
+    <script src="https://raw.githubusercontent.com/NagashekarVanapalli/DV_project/main/js/jquery-ui.min.js"></script>
+    <script src="https://raw.githubusercontent.com/NagashekarVanapalli/DV_project/main/js/bootstrap.min.js"></script>
+
+    
+    <script>
+        const tip = d3.tip()
+            .attr('class', 'd3-tip')
+            .offset([-10, 0])
+            .html((d) => {
+                return `<strong>Sleep Type:</strong> <span style='color:${color(d.index)}'>${d.data.sleep_type}</span><br><strong>Percent:</strong> ${d.data.count}`;
+            });
+
+        const width = 340;
+        const height = 340;
+        const radius = Math.min(width, height) / 2;
+
+        const svg = d3.select("#chart-area")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("g")
+            .attr("transform", `translate(${width / 2}, ${height / 2})`);
+
+        const color = d3.scaleOrdinal(["#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f"]);
+
+        const pie = d3.pie()
+            .value(d => d.count)
+            .sort(null);
+
+        const arc = d3.arc()
+            .innerRadius(0)
+            .outerRadius(radius);
+
+        function type(d) {
+            d.male = Number(d.male);
+            d.female = Number(d.female);
+            return d;
+        }
+
+        function arcTween(a) {
+            const i = d3.interpolate(this._current, a);
+            this._current = i(1);
+            return (t) => arc(i(t));
+        }
+
+        d3.json("https://raw.githubusercontent.com/NagashekarVanapalli/DV_project/main/data.json", type).then(data => {
+            d3.selectAll("input")
+                .on("change", update);
+
+            function update(value = this.value) {
+                const path = svg.selectAll("path")
+                    .call(tip)
+                    .data(pie(data[value]));
+
+
+                path.transition().duration(200).attrTween("d", arcTween);
+
+                
+                path.enter().append("path")
+                    .attr("fill", (d, i) => color(i))
+                    .attr("d", arc)
+                    .attr("stroke", "white")
+                    .attr("stroke-width", "6px")
+                    .on('mouseover', tip.show)
+                    .on('mouseout', tip.hide)
+                    .each(function (d) { this._current = d; });
+            }
+
+            update("male");
+        });
+    </script>
+</body>
+</html>
